@@ -125,13 +125,19 @@ namespace Stok_Takip
 
         private void eksiBir_Click(object sender, EventArgs e)
         {
-            string sorgu = "UPDATE stokTakip SET bikeStock = bikeStock - 1 WHERE bikeCode = @kod";
+            string sorgu = "UPDATE stokTakip SET bikeStock = bikeStock - 1 WHERE bikeCode = @kod AND bikeStock > 0";
             komut = new SqlCommand(sorgu, baglanti);
             komut.Parameters.AddWithValue("@kod", gelenId);
 
             baglanti.Open();
-            komut.ExecuteNonQuery();
+            int etkilenen =komut.ExecuteNonQuery();
             baglanti.Close();
+
+            if (etkilenen == 0)
+            {
+                MessageBox.Show("Stokta yeterli ürün yok!", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
 
             stok1.Text = (Convert.ToInt32(stok1.Text) - 1).ToString();
@@ -140,13 +146,19 @@ namespace Stok_Takip
 
         private void eksiOn_Click(object sender, EventArgs e)
         {
-            string sorgu = "UPDATE stokTakip SET bikeStock = bikeStock - 10 WHERE bikeCode = @kod";
+            string sorgu = "UPDATE stokTakip SET bikeStock = bikeStock - 10 WHERE bikeCode = @kod AND bikeStock > 10";
             komut = new SqlCommand(sorgu, baglanti);
             komut.Parameters.AddWithValue("@kod", gelenId);
 
             baglanti.Open();
-            komut.ExecuteNonQuery();
+            int etkilenen = komut.ExecuteNonQuery();
             baglanti.Close();
+            if (etkilenen == 0)
+            {
+                MessageBox.Show("Stokta yeterli ürün yok!", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
 
 
             stok1.Text = (Convert.ToInt32(stok1.Text) - 10).ToString();
@@ -178,7 +190,7 @@ namespace Stok_Takip
             
             decimal a = fiyatOlustur();
             satisFiyati.Text = Convert.ToString(a);
-            MessageBox.Show("Fiyat Basariyla Guncellendi");
+            MessageBox.Show("Fiyat Basariyla Guncellendi", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

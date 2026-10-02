@@ -3,15 +3,15 @@ using System.Data;
 
 namespace Stok_Takip
 {
-    
+
     public partial class Form1 : Form
     {
         SqlConnection baglanti;
         SqlCommand komut;
         SqlDataAdapter da;
         SqlDataReader oku;
-        
-        
+
+
 
         public string _baglanti = @"server=.\SQLEXPRESS;Initial Catalog=stok_takip;Integrated Security=SSPI;TrustServerCertificate=True";
 
@@ -22,7 +22,7 @@ namespace Stok_Takip
             InitializeComponent();
         }
 
-       
+
         public decimal fiyatGetir()
         {
             decimal toplam = 0;
@@ -45,7 +45,7 @@ namespace Stok_Takip
 
                 urunListesi.Add(urun);
             }
-            
+
             foreach (var urun in urunListesi)
             {
                 toplam += urun.stok * urun.fiyat;
@@ -67,8 +67,25 @@ namespace Stok_Takip
             dataGridView1.DataSource = tablo;
             baglanti.Close();
 
+            dataGridView1.Columns["bikeCode"].HeaderText = "Ürün Kodu";
+            dataGridView1.Columns["bikeName"].HeaderText = "Ürün Adı";
+            dataGridView1.Columns["bikeStock"].HeaderText = "Stok";
+            dataGridView1.Columns["buyingPrice"].HeaderText = "Alış Fiyatı";
+            dataGridView1.Columns["sellingPrice"].HeaderText = "Satış Fiyatı";
+
+
+
         }
 
+        void sil()
+        {
+            urunKodu.Clear();
+            urunAdi.Clear();
+            stok.Clear();
+            alisFiyati.Clear();
+            satisFiyati.Clear();
+
+        }
         private void Form1_Load(object sender, EventArgs e)
         {
             guncelle();
@@ -78,11 +95,12 @@ namespace Stok_Takip
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            urunKodu.Text = dataGridView1.CurrentRow.Cells[0].Value.ToString();
-            urunAdi.Text = dataGridView1.CurrentRow.Cells[1].Value.ToString();
-            alisFiyati.Text = dataGridView1.CurrentRow.Cells[2].Value.ToString();
-            satisFiyati.Text = dataGridView1.CurrentRow.Cells[3].Value.ToString();
-            stok.Text = dataGridView1.CurrentRow.Cells[4].Value.ToString();
+
+            urunKodu.Text = dataGridView1.CurrentRow.Cells["bikeCode"].Value.ToString();
+            urunAdi.Text = dataGridView1.CurrentRow.Cells["bikeName"].Value.ToString();
+            alisFiyati.Text = dataGridView1.CurrentRow.Cells["buyingPrice"].Value.ToString();
+            satisFiyati.Text = dataGridView1.CurrentRow.Cells["sellingPrice"].Value.ToString();
+            stok.Text = dataGridView1.CurrentRow.Cells["bikeStock"].Value.ToString();
         }
 
         private void urunEkle_Click(object sender, EventArgs e)
@@ -95,20 +113,16 @@ namespace Stok_Takip
             komut.Parameters.AddWithValue("@alisFiyati", Convert.ToInt32(alisFiyati.Text));
             komut.Parameters.AddWithValue("@satisFiyati", Convert.ToInt32(satisFiyati.Text));
 
-            urunKodu.Clear();
-            urunAdi.Clear();
-            stok.Clear();
-            alisFiyati.Clear();
-            satisFiyati.Clear();
+            sil();
 
             baglanti.Open();
             komut.ExecuteNonQuery();
             guncelle();
-            decimal a= fiyatGetir();
+            decimal a = fiyatGetir();
             totalPrice.Text = a.ToString("N2") + " TL";
             baglanti.Close();
 
-            MessageBox.Show("Urun basariyla eklendi.");
+            MessageBox.Show("Urun basariyla eklendi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
 
 
@@ -116,24 +130,70 @@ namespace Stok_Takip
 
         private void urunSil_Click(object sender, EventArgs e)
         {
-            string sorgu = "DELETE FROM stokTakip WHERE bikeCode = @kod ";
+
+            bool onay = MessageBox.Show("Ürünü silmek istediğinize emin misiniz?", "Uyarı", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.OK;
+
+
+            if (onay == true)
+            {
+                string sorgu = "DELETE FROM stokTakip WHERE bikeCode = @kod ";
+                komut = new SqlCommand(sorgu, baglanti);
+                komut.Parameters.AddWithValue("@kod", urunKodu.Text);
+
+                baglanti.Open();
+                komut.ExecuteNonQuery();
+                guncelle();
+                decimal a = fiyatGetir();
+                totalPrice.Text = a.ToString("N2") + " TL";
+                baglanti.Close();
+
+                sil();
+
+                MessageBox.Show("Urun basariyla silindi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else 
+            {
+                MessageBox.Show("Ürün silme işlemi iptal edildi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+            
+
+        }
+
+        private void satis_Click(object sender, EventArgs e)
+        {
+            string sorgu = "UPDATE stokTakip SET bikeStock = bikeStock - 1 WHERE bikeCode = @kod AND bikeStock > 0";
             komut = new SqlCommand(sorgu, baglanti);
+            komut.Parameters.AddWithValue("@kod", urunKodu.Text);
+            
+
+            baglanti.Open();           
+            int etkilenen = komut.ExecuteNonQuery();
+            guncelle();           
+            baglanti.Close();
+
+            if (etkilenen == 0)
+            {
+                MessageBox.Show("Stokta yeterli ürün yok.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string sorgu2 = "SELECT bikeStock FROM stokTakip WHERE bikeCode = @kod";
+            komut = new SqlCommand(sorgu2, baglanti);
             komut.Parameters.AddWithValue("@kod", urunKodu.Text);
 
             baglanti.Open();
-            komut.ExecuteNonQuery();
-            guncelle();
-            decimal a= fiyatGetir();
-            totalPrice.Text = a.ToString("N2") + " TL";
+            SqlDataReader oku = komut.ExecuteReader();
+            oku.Read();
+            stok.Text = oku["bikeStock"].ToString();
             baglanti.Close();
 
-            urunKodu.Clear();
-            urunAdi.Clear();
-            stok.Clear();
-            alisFiyati.Clear();
-            satisFiyati.Clear();
+            MessageBox.Show("Satış başarılı, stok güncellendi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            MessageBox.Show("Urun basariyla silindi.");
+            sil();
+
+
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -150,11 +210,13 @@ namespace Stok_Takip
             baglanti.Open();
             komut.ExecuteNonQuery();
             guncelle();
-            decimal a=fiyatGetir();
+            decimal a = fiyatGetir();
             totalPrice.Text = a.ToString("N2") + " TL";
             baglanti.Close();
 
-            MessageBox.Show("Urun basariyla guncellendi!");
+            MessageBox.Show("Urun basariyla guncellendi!", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            sil();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -174,8 +236,10 @@ namespace Stok_Takip
             }
             else
             {
-                MessageBox.Show("Lütfen tablodan bir satır seçin.");
+                MessageBox.Show("Lütfen tablodan bir satır seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+
+            sil();
         }
         public class UrunStokFiyat
         {
@@ -183,5 +247,6 @@ namespace Stok_Takip
             public decimal fiyat { get; set; }
         }
 
+        
     }
 }

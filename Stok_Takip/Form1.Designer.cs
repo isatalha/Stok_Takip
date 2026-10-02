@@ -48,6 +48,7 @@
             label6 = new Label();
             label7 = new Label();
             label8 = new Label();
+            satis = new Button();
             tableLayoutPanel2 = new TableLayoutPanel();
             dataGridView1 = new DataGridView();
             tableLayoutPanel3 = new TableLayoutPanel();
@@ -81,6 +82,7 @@
             tableLayoutPanel1.Controls.Add(label6, 0, 0);
             tableLayoutPanel1.Controls.Add(label7, 1, 0);
             tableLayoutPanel1.Controls.Add(label8, 0, 6);
+            tableLayoutPanel1.Controls.Add(satis, 2, 4);
             tableLayoutPanel1.Dock = DockStyle.Left;
             tableLayoutPanel1.Location = new Point(0, 0);
             tableLayoutPanel1.Margin = new Padding(5);
@@ -236,7 +238,7 @@
             button2.Name = "button2";
             button2.Size = new Size(211, 68);
             button2.TabIndex = 4;
-            button2.Text = "Getir";
+            button2.Text = "Detay";
             button2.UseVisualStyleBackColor = true;
             button2.Click += button2_Click;
             // 
@@ -305,6 +307,19 @@
             label8.TabIndex = 10;
             label8.Text = "Toplam Deger =";
             // 
+            // satis
+            // 
+            satis.Anchor = AnchorStyles.None;
+            satis.Font = new Font("Segoe UI", 13.8F);
+            satis.Location = new Point(512, 371);
+            satis.Margin = new Padding(5);
+            satis.Name = "satis";
+            satis.Size = new Size(211, 68);
+            satis.TabIndex = 11;
+            satis.Text = "Satış";
+            satis.UseVisualStyleBackColor = true;
+            satis.Click += satis_Click;
+            // 
             // tableLayoutPanel2
             // 
             tableLayoutPanel2.AutoSize = true;
@@ -329,24 +344,24 @@
             dataGridView1.Location = new Point(3, 90);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.RowHeadersWidth = 51;
-            dataGridView1.Size = new Size(762, 449);
+            dataGridView1.Size = new Size(798, 449);
             dataGridView1.TabIndex = 0;
             dataGridView1.CellContentClick += dataGridView1_CellContentClick;
             // 
             // tableLayoutPanel3
             // 
             tableLayoutPanel3.ColumnCount = 2;
-            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 768F));
-            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 26F));
+            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 804F));
+            tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 8F));
             tableLayoutPanel3.Controls.Add(dataGridView1, 0, 1);
             tableLayoutPanel3.Dock = DockStyle.Right;
-            tableLayoutPanel3.Location = new Point(787, 0);
+            tableLayoutPanel3.Location = new Point(758, 0);
             tableLayoutPanel3.Name = "tableLayoutPanel3";
             tableLayoutPanel3.RowCount = 3;
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 87F));
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 455F));
             tableLayoutPanel3.RowStyles.Add(new RowStyle(SizeType.Absolute, 54F));
-            tableLayoutPanel3.Size = new Size(794, 673);
+            tableLayoutPanel3.Size = new Size(823, 673);
             tableLayoutPanel3.TabIndex = 2;
             // 
             // Form1
@@ -362,6 +377,7 @@
             Icon = (Icon)resources.GetObject("$this.Icon");
             Margin = new Padding(5);
             Name = "Form1";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Stok Takip Uygulamasi";
             Load += Form1_Load;
             tableLayoutPanel1.ResumeLayout(false);
@@ -396,5 +412,6 @@
         private Label label7;
         private Label totalPrice;
         private Label label8;
+        private Button satis;
     }
 }

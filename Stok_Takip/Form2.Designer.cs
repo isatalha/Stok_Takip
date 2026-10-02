@@ -208,9 +208,10 @@
             // 
             // tavsiyeEdilenSatis
             // 
+            tavsiyeEdilenSatis.Anchor = AnchorStyles.Left;
             tavsiyeEdilenSatis.AutoSize = true;
             tavsiyeEdilenSatis.Font = new Font("Segoe UI", 18F);
-            tavsiyeEdilenSatis.Location = new Point(243, 771);
+            tavsiyeEdilenSatis.Location = new Point(243, 800);
             tavsiyeEdilenSatis.Name = "tavsiyeEdilenSatis";
             tavsiyeEdilenSatis.Size = new Size(327, 41);
             tavsiyeEdilenSatis.TabIndex = 6;
@@ -219,10 +220,10 @@
             // 
             // label8
             // 
-            label8.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            label8.Anchor = AnchorStyles.Right;
             label8.AutoSize = true;
             label8.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
-            label8.Location = new Point(21, 771);
+            label8.Location = new Point(21, 800);
             label8.Name = "label8";
             label8.Size = new Size(216, 41);
             label8.TabIndex = 11;
@@ -370,6 +371,7 @@
             Controls.Add(tableLayoutPanel1);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form2";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Urun Detaylari";
             Load += Form2_Load;
             tableLayoutPanel1.ResumeLayout(false);
