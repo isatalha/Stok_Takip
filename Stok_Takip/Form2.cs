@@ -1,4 +1,9 @@
-﻿using System;
+﻿using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using Microsoft.Data.SqlClient;
+using Microsoft.VisualBasic.ApplicationServices;
+using ScottPlot;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -7,18 +12,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Data.SqlClient;
+using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
+
+
 
 namespace Stok_Takip
 {
-    public partial class Form2 : Form
+    public partial class urunDetay : Form
     {
         SqlCommand komut;
         SqlDataAdapter da;
         SqlConnection baglanti = new SqlConnection(@"server=.\SQLEXPRESS;Initial Catalog=stok_takip;Integrated Security=SSPI;TrustServerCertificate=True");
         string _baglanti = @"server=.\SQLEXPRESS;Initial Catalog=stok_takip;Integrated Security=SSPI;TrustServerCertificate=True";
         SqlDataReader oku;
-
+        List<double> gunler = new List<double>();
+        private user _aktifKullanici;
         public string gelenId;
 
         decimal fiyatOlustur()
@@ -46,13 +55,14 @@ namespace Stok_Takip
             }
         }
 
-        public Form2(string urunKodu)
+        public urunDetay(string urunKodu, user gelenKullanici)
         {
             InitializeComponent();
             gelenId = urunKodu;
+            _aktifKullanici = gelenKullanici;
         }
 
-        public Form2()
+        public urunDetay()
         {
             InitializeComponent();
         }
@@ -80,8 +90,20 @@ namespace Stok_Takip
             }
             baglanti.Close();
 
+            //Kullanici yetkisine gore butonalari gizle ve goster
+            if (_aktifKullanici != null && _aktifKullanici.access == 2)
+            {
+                label3.Visible = false;
+                label8.Visible = false;
+                alisFiyati.Visible = false;
+                yuzdelik.Visible = false;
+                button1.Visible = false;
+                tavsiyeEdilenSatis.Visible = false;
+                fiyatGuncelle.Visible = false;
 
+            }
 
+            
         }
 
         private void urunKodu_Click(object sender, EventArgs e)
@@ -130,7 +152,7 @@ namespace Stok_Takip
             komut.Parameters.AddWithValue("@kod", gelenId);
 
             baglanti.Open();
-            int etkilenen =komut.ExecuteNonQuery();
+            int etkilenen = komut.ExecuteNonQuery();
             baglanti.Close();
 
             if (etkilenen == 0)
@@ -187,10 +209,94 @@ namespace Stok_Takip
             komut = new SqlCommand(sorgu, baglanti);
             komut.ExecuteNonQuery();
             baglanti.Close();
-            
+
             decimal a = fiyatOlustur();
             satisFiyati.Text = Convert.ToString(a);
             MessageBox.Show("Fiyat Basariyla Guncellendi", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void cartesianChart1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tarihHesap_Click(object sender, EventArgs e)
+        {
+            DateTime baslangic = dateTimePicker2.Value;
+            DateTime bitis = dateTimePicker1.Value;
+            TimeSpan fark = bitis - baslangic;
+            int gunSayisi = (int)fark.TotalDays;
+
+            if (baslangic > bitis)
+            {
+                MessageBox.Show("Başlangıç tarihi bitiş tarihinden büyük olamaz!", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            string sorgu = @"SELECT CAST(date AS DATE) AS date, quantity FROM satisTakip WHERE bikeCode = @kod AND CAST(date AS DATE) BETWEEN @baslangic AND @bitis ORDER BY CAST(date AS DATE) ASC";
+
+            komut = new SqlCommand(sorgu, baglanti);
+            komut.Parameters.AddWithValue("@kod", gelenId);
+            komut.Parameters.AddWithValue("@baslangic", baslangic.Date);
+            komut.Parameters.AddWithValue("@bitis", bitis.Date);
+
+            da = new SqlDataAdapter(komut);
+            DataTable dt = new DataTable();
+
+            baglanti.Open();
+            da.Fill(dt);
+            baglanti.Close();
+
+            if (dt.Rows.Count == 0)
+            {
+                MessageBox.Show($"{gelenId} kodlu ürün için bu tarih aralığında satış bulunamadı.");
+                formsPlot1.Plot.Clear();
+                formsPlot1.Refresh();
+                return;
+            }
+
+            double[] xTarihler = new double[dt.Rows.Count];
+            double[] yMiktarlar = new double[dt.Rows.Count];
+
+            for (int i = 1; i < dt.Rows.Count; i++)
+            {
+                DateTime tarih = Convert.ToDateTime(dt.Rows[i]["date"]).Date;
+                xTarihler[i] = tarih.ToOADate();
+                yMiktarlar[i] = Convert.ToDouble(dt.Rows[i]["quantity"]);
+            }
+
+            formsPlot1.Plot.Clear();
+
+            var bar = formsPlot1.Plot.Add.Bars(xTarihler, yMiktarlar);
+            bar.Label = $"{gelenId} Satış Miktarı";
+            foreach (var b in bar.Bars)
+            {
+                b.Size = 0.5;
+                b.FillColor = ScottPlot.Color.FromColor(System.Drawing.Color.DodgerBlue).WithAlpha(200);
+            }
+
+            formsPlot1.Plot.Axes.DateTimeTicksBottom();
+
+            formsPlot1.Plot.Title($"{gelenId} Satış Miktarı ({baslangic.ToShortDateString()} - {bitis.ToShortDateString()})");
+            formsPlot1.Plot.XLabel("Tarih");
+            formsPlot1.Plot.YLabel("Satış Miktarı");
+            formsPlot1.Plot.ShowLegend();
+
+
+            formsPlot1.Plot.Axes.AutoScale();
+            formsPlot1.Plot.Axes.SetLimitsY(0 , 0);
+
+            formsPlot1.Refresh();
+
+
+
+
+
+
         }
     }
 }

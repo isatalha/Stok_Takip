@@ -11,15 +11,19 @@ namespace Stok_Takip
         SqlDataAdapter da;
         SqlDataReader oku;
 
+        public user _AktifKullanici;
 
+        //"Host=db.jnxigomcttpneuaponhm.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=[SuuAVSG9xjdmV0kq];SSL Mode=Require;Trust Server Certificate=true"
+        // postgresql://postgres:[YOUR-PASSWORD]@db.jnxigomcttpneuaponhm.supabase.co:5432/postgres
 
         public string _baglanti = @"server=.\SQLEXPRESS;Initial Catalog=stok_takip;Integrated Security=SSPI;TrustServerCertificate=True";
 
 
 
-        public Form1()
+        public Form1(user girisYapan)
         {
             InitializeComponent();
+            _AktifKullanici = girisYapan;
         }
 
 
@@ -91,16 +95,37 @@ namespace Stok_Takip
             guncelle();
             decimal a = fiyatGetir();
             totalPrice.Text = a.ToString("N2") + " TL";
+
+            kullaniciAdi.Text = ($"Mevcut Kullanici = {_AktifKullanici.username}");
+
+
+
+            if (_AktifKullanici.access != 1)
+            {
+                label8.Visible = false;
+                totalPrice.Visible = false;
+                label3.Visible = false;
+                alisFiyati.Visible = false;
+                dataGridView1.Columns["buyingPrice"].Visible = false;
+                button1.Visible = false;
+                kulOlustur.Visible = false;
+
+            }
+
         }
 
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
+            // Sütun başlığına tıklandığında hataya düşmemesi için kontrol
+            if (e.RowIndex < 0 || dataGridView1.CurrentRow == null)
+                return;
 
-            urunKodu.Text = dataGridView1.CurrentRow.Cells["bikeCode"].Value.ToString();
-            urunAdi.Text = dataGridView1.CurrentRow.Cells["bikeName"].Value.ToString();
-            alisFiyati.Text = dataGridView1.CurrentRow.Cells["buyingPrice"].Value.ToString();
-            satisFiyati.Text = dataGridView1.CurrentRow.Cells["sellingPrice"].Value.ToString();
-            stok.Text = dataGridView1.CurrentRow.Cells["bikeStock"].Value.ToString();
+            // ?.ToString() sayesinde veritabanında o alan boş (null) olsa bile program çökmez
+            urunKodu.Text = dataGridView1.CurrentRow.Cells["bikeCode"].Value?.ToString() ?? "";
+            urunAdi.Text = dataGridView1.CurrentRow.Cells["bikeName"].Value?.ToString() ?? "";
+            alisFiyati.Text = dataGridView1.CurrentRow.Cells["buyingPrice"].Value?.ToString() ?? "";
+            satisFiyati.Text = dataGridView1.CurrentRow.Cells["sellingPrice"].Value?.ToString() ?? "";
+            stok.Text = dataGridView1.CurrentRow.Cells["bikeStock"].Value?.ToString() ?? "";
         }
 
         private void urunEkle_Click(object sender, EventArgs e)
@@ -151,12 +176,12 @@ namespace Stok_Takip
 
                 MessageBox.Show("Urun basariyla silindi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            else 
+            else
             {
                 MessageBox.Show("Ürün silme işlemi iptal edildi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
-            
+
 
         }
 
@@ -165,11 +190,9 @@ namespace Stok_Takip
             string sorgu = "UPDATE stokTakip SET bikeStock = bikeStock - 1 WHERE bikeCode = @kod AND bikeStock > 0";
             komut = new SqlCommand(sorgu, baglanti);
             komut.Parameters.AddWithValue("@kod", urunKodu.Text);
-            
-
-            baglanti.Open();           
+            baglanti.Open();
             int etkilenen = komut.ExecuteNonQuery();
-            guncelle();           
+            guncelle();
             baglanti.Close();
 
             if (etkilenen == 0)
@@ -190,10 +213,49 @@ namespace Stok_Takip
 
             MessageBox.Show("Satış başarılı, stok güncellendi.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
+            
+
+            // satis grafigi icin databaseye veri ekleme
+
+            string girilenKod = urunKodu.Text.Trim(); // Trim() sağdaki soldaki gizli boşlukları siler
+
+            if (string.IsNullOrEmpty(girilenKod))
+            {
+                MessageBox.Show("HATA: TextBox boş algılandı! Lütfen yazdığınızdan emin olun.");
+                return;
+            }
+
+            string kontrol = "SELECT COUNT(*) FROM satisTakip WHERE bikeCode = @kod AND CAST(date AS DATE) = @tarih";
+            komut = new SqlCommand(kontrol, baglanti);
+            komut.Parameters.AddWithValue("@kod", urunKodu.Text);
+            komut.Parameters.AddWithValue(@"tarih", DateTime.Now.Date);
+            baglanti.Open() ;
+            int kontrolSonucu = (int)komut.ExecuteScalar();
+            baglanti.Close();
+
+            if (kontrolSonucu > 0)
+            {
+                string guncelleSorgu = "UPDATE satisTakip SET quantity = quantity + 1 WHERE bikeCode = @kod AND CAST(date AS DATE) = @tarih";
+                komut = new SqlCommand(guncelleSorgu, baglanti);
+                komut.Parameters.AddWithValue("@kod", urunKodu.Text);
+                komut.Parameters.AddWithValue(@"tarih", DateTime.Now.Date);
+                baglanti.Open();
+                komut.ExecuteNonQuery();
+                baglanti.Close();
+            }
+            else
+            {
+                string ekleSorgu = "INSERT INTO satisTakip (bikeCode, quantity, date) VALUES (@kod, 1, @tarih)";
+                komut = new SqlCommand(ekleSorgu, baglanti);
+                komut.Parameters.AddWithValue("@kod", urunKodu.Text);
+                komut.Parameters.AddWithValue(@"tarih", DateTime.Now.Date);
+
+                baglanti.Open();
+                komut.ExecuteNonQuery();
+                baglanti.Close();
+            }
+
             sil();
-
-
-
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -225,7 +287,8 @@ namespace Stok_Takip
             {
                 string urunId = dataGridView1.CurrentRow.Cells["bikeCode"].Value.ToString();
 
-                Form2 form2 = new Form2(urunId);
+                urunDetay form2 = new urunDetay(urunId, _AktifKullanici);
+
                 form2.ShowDialog();
 
 
@@ -247,6 +310,23 @@ namespace Stok_Takip
             public decimal fiyat { get; set; }
         }
 
-        
+        private void kulOlustur_Click(object sender, EventArgs e)
+        {
+            Form kayit = new kayit();
+            kayit.ShowDialog();
+        }
+
+        private void cikisYap_Click(object sender, EventArgs e)
+        {
+            Form login = new login();
+            this.Close();
+            login.ShowDialog();
+
+        }
+
+        private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
     }
 }
